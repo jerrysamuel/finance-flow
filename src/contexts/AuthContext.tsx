@@ -1,20 +1,12 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { authAPI, userAPI, setTokens, clearTokens, getAccessToken } from '@/lib/api';
-
-interface User {
-  id: number;
-  email: string;
-  full_name?: string;
-  avatar?: string;
-  created_at?: string;
-}
+import { authAPI, userAPI, setTokens, clearTokens, getAccessToken, User } from '@/lib/api';
 
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  register: (email: string, password: string, fullName?: string) => Promise<{ success: boolean; error?: string }>;
+  login: (username: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  register: (data: { username: string; email: string; password: string; password2: string }) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -60,9 +52,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     refreshUser();
   }, [refreshUser]);
 
-  const login = async (email: string, password: string) => {
+  const login = async (username: string, password: string) => {
     try {
-      const response = await authAPI.login({ email, password });
+      const response = await authAPI.login({ username, password });
       const { access, refresh } = response.data;
       
       setTokens(access, refresh);
@@ -76,18 +68,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const message = error.response?.data?.detail || 
                       error.response?.data?.message ||
                       error.response?.data?.non_field_errors?.[0] ||
-                      'Invalid email or password';
+                      'Invalid username or password';
       return { success: false, error: message };
     }
   };
 
-  const register = async (email: string, password: string, fullName?: string) => {
+  const register = async (data: { username: string; email: string; password: string; password2: string }) => {
     try {
-      const response = await authAPI.register({ 
-        email, 
-        password, 
-        full_name: fullName 
-      });
+      const response = await authAPI.register(data);
       
       // Some APIs return tokens on register, some require login
       if (response.data.access) {
@@ -104,10 +92,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       let message = 'Registration failed';
       
       if (errorData) {
-        if (errorData.email) {
+        if (errorData.username) {
+          message = Array.isArray(errorData.username) ? errorData.username[0] : errorData.username;
+        } else if (errorData.email) {
           message = Array.isArray(errorData.email) ? errorData.email[0] : errorData.email;
         } else if (errorData.password) {
           message = Array.isArray(errorData.password) ? errorData.password[0] : errorData.password;
+        } else if (errorData.password2) {
+          message = Array.isArray(errorData.password2) ? errorData.password2[0] : errorData.password2;
         } else if (errorData.detail) {
           message = errorData.detail;
         } else if (errorData.message) {

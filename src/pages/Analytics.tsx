@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import DashboardLayout from '@/components/DashboardLayout';
 import StatCard from '@/components/StatCard';
 import SkeletonLoader from '@/components/SkeletonLoader';
-import { analyticsAPI, CategoryData, MonthlyData } from '@/lib/api';
+import { analyticsAPI, CategoryAnalytics, MonthlyData } from '@/lib/api';
 import { TrendingUp, TrendingDown, Wallet, PieChart } from 'lucide-react';
 import {
   BarChart,
@@ -44,16 +44,16 @@ const Analytics: React.FC = () => {
   const { data: monthlyData, isLoading: monthlyLoading } = useQuery({
     queryKey: ['analytics', 'monthly'],
     queryFn: async () => {
-      const response = await analyticsAPI.getMonthly();
+      const response = await analyticsAPI.getByMonth({ months: 6 });
       return response.data || [];
     },
   });
 
-  // Fetch category data
+  // Fetch category data (DEBIT/expenses by category)
   const { data: categoryData, isLoading: categoryLoading } = useQuery({
     queryKey: ['analytics', 'categories'],
     queryFn: async () => {
-      const response = await analyticsAPI.getByCategories();
+      const response = await analyticsAPI.getByCategory({ type: 'DEBIT' });
       return response.data || [];
     },
   });
@@ -68,9 +68,9 @@ const Analytics: React.FC = () => {
   };
 
   // Prepare chart data with colors
-  const pieChartData = categoryData?.map((item: CategoryData, index: number) => ({
+  const pieChartData = categoryData?.map((item: CategoryAnalytics, index: number) => ({
     ...item,
-    color: CHART_COLORS[index % CHART_COLORS.length],
+    color: item.color || CHART_COLORS[index % CHART_COLORS.length],
   })) || [];
 
   const isLoading = summaryLoading || monthlyLoading || categoryLoading;

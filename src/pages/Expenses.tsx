@@ -31,7 +31,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { expensesAPI, categoriesAPI, Expense, ExpenseInput, Category } from '@/lib/api';
+import { expensesAPI, categoriesAPI, Expense, ExpenseInput, Category, TransactionType } from '@/lib/api';
 import { Plus, Search, Filter } from 'lucide-react';
 
 const Expenses: React.FC = () => {
@@ -48,9 +48,9 @@ const Expenses: React.FC = () => {
   const { data: expenses, isLoading: expensesLoading } = useQuery({
     queryKey: ['expenses', typeFilter],
     queryFn: async () => {
-      const params: any = {};
+      const params: { type?: TransactionType } = {};
       if (typeFilter !== 'all') {
-        params.type = typeFilter;
+        params.type = typeFilter as TransactionType;
       }
       const response = await expensesAPI.getAll(params);
       return response.data?.results || response.data || [];
@@ -62,7 +62,7 @@ const Expenses: React.FC = () => {
     queryKey: ['categories'],
     queryFn: async () => {
       const response = await categoriesAPI.getAll();
-      return response.data?.results || response.data || [];
+      return response.data || [];
     },
   });
 
@@ -156,7 +156,7 @@ const Expenses: React.FC = () => {
           <div>
             <h1 className="text-2xl font-bold text-foreground">Transactions</h1>
             <p className="text-muted-foreground">
-              Manage your income and expenses
+              Manage your credits and debits
             </p>
           </div>
           <Button onClick={() => setIsFormOpen(true)}>
@@ -183,8 +183,18 @@ const Expenses: React.FC = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Types</SelectItem>
-              <SelectItem value="income">Income</SelectItem>
-              <SelectItem value="expense">Expense</SelectItem>
+              <SelectItem value="CREDIT">
+                <span className="flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-income" />
+                  Credit (Income)
+                </span>
+              </SelectItem>
+              <SelectItem value="DEBIT">
+                <span className="flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-expense" />
+                  Debit (Expense)
+                </span>
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>

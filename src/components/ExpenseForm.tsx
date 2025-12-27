@@ -29,17 +29,18 @@ import {
 } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
-import { Category, ExpenseInput, Expense } from '@/lib/api';
+import { Category, ExpenseInput, Expense, TransactionType } from '@/lib/api';
 
 const expenseSchema = z.object({
   amount: z.string().min(1, 'Amount is required').refine(
     (val) => !isNaN(parseFloat(val)) && parseFloat(val) > 0,
     'Amount must be a positive number'
   ),
-  category: z.string().min(1, 'Category is required'),
+  category: z.string().optional(),
   description: z.string().max(500, 'Description must be less than 500 characters').optional(),
   date: z.date({ required_error: 'Date is required' }),
-  type: z.enum(['income', 'expense'], { required_error: 'Type is required' }),
+  transaction_type: z.enum(['DEBIT', 'CREDIT'], { required_error: 'Type is required' }),
+  notes: z.string().max(1000, 'Notes must be less than 1000 characters').optional(),
 });
 
 type ExpenseFormData = z.infer<typeof expenseSchema>;
@@ -63,20 +64,22 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({
     resolver: zodResolver(expenseSchema),
     defaultValues: {
       amount: initialData ? String(initialData.amount) : '',
-      category: initialData ? String(initialData.category) : '',
+      category: initialData?.category ? String(initialData.category) : '',
       description: initialData?.description || '',
       date: initialData ? new Date(initialData.date) : new Date(),
-      type: initialData?.type || 'expense',
+      transaction_type: initialData?.transaction_type || 'DEBIT',
+      notes: initialData?.notes || '',
     },
   });
 
   const handleSubmit = async (data: ExpenseFormData) => {
     await onSubmit({
       amount: parseFloat(data.amount),
-      category: data.category,
+      category: data.category ? parseInt(data.category) : null,
       description: data.description || '',
       date: format(data.date, 'yyyy-MM-dd'),
-      type: data.type,
+      transaction_type: data.transaction_type as TransactionType,
+      notes: data.notes,
     });
   };
 
@@ -86,7 +89,7 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({
         <div className="grid grid-cols-2 gap-4">
           <FormField
             control={form.control}
-            name="type"
+            name="transaction_type"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Type</FormLabel>
@@ -97,8 +100,18 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="expense">Expense</SelectItem>
-                    <SelectItem value="income">Income</SelectItem>
+                    <SelectItem value="DEBIT">
+                      <span className="flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-expense" />
+                        Debit (Expense)
+                      </span>
+                    </SelectItem>
+                    <SelectItem value="CREDIT">
+                      <span className="flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-income" />
+                        Credit (Income)
+                      </span>
+                    </SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -207,13 +220,30 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({
           name="description"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Description (optional)</FormLabel>
+              <FormLabel>Description</FormLabel>
+              <FormControl>
+                <Input
+                  {...field}
+                  placeholder="What was this for?"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="notes"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Notes (optional)</FormLabel>
               <FormControl>
                 <Textarea
                   {...field}
-                  placeholder="What was this for?"
+                  placeholder="Additional notes..."
                   className="resize-none"
-                  rows={3}
+                  rows={2}
                 />
               </FormControl>
               <FormMessage />

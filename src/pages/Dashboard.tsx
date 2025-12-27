@@ -1,14 +1,13 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { format } from 'date-fns';
 import DashboardLayout from '@/components/DashboardLayout';
 import StatCard from '@/components/StatCard';
 import ExpenseItem from '@/components/ExpenseItem';
 import SkeletonLoader from '@/components/SkeletonLoader';
 import EmptyState from '@/components/EmptyState';
 import { Button } from '@/components/ui/button';
-import { analyticsAPI, expensesAPI, AnalyticsSummary, Expense } from '@/lib/api';
+import { analyticsAPI, expensesAPI, Expense } from '@/lib/api';
 import {
   Wallet,
   TrendingUp,
@@ -41,7 +40,7 @@ const Dashboard: React.FC = () => {
   const { data: monthlyData, isLoading: monthlyLoading } = useQuery({
     queryKey: ['analytics', 'monthly'],
     queryFn: async () => {
-      const response = await analyticsAPI.getMonthly();
+      const response = await analyticsAPI.getByMonth({ months: 6 });
       return response.data;
     },
   });
@@ -109,20 +108,20 @@ const Dashboard: React.FC = () => {
             <StatCard
               title="Total Income"
               value={summary?.total_income || 0}
-              subtitle={`${summary?.income_count || 0} transactions`}
+              subtitle="Credits"
               type="income"
               icon={<TrendingUp className="h-5 w-5" />}
             />
             <StatCard
               title="Total Expenses"
               value={summary?.total_expenses || 0}
-              subtitle={`${summary?.expense_count || 0} transactions`}
+              subtitle="Debits"
               type="expense"
               icon={<TrendingDown className="h-5 w-5" />}
             />
             <StatCard
               title="Transactions"
-              value={(summary?.income_count || 0) + (summary?.expense_count || 0)}
+              value={summary?.transaction_count || 0}
               subtitle="All time"
               icon={<Receipt className="h-5 w-5" />}
             />

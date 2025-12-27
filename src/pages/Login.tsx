@@ -18,7 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Wallet, Loader2, ArrowRight } from 'lucide-react';
 
 const loginSchema = z.object({
-  email: z.string().trim().email('Please enter a valid email address'),
+  username: z.string().trim().min(1, 'Username is required'),
   password: z.string().min(1, 'Password is required'),
 });
 
@@ -43,7 +43,7 @@ const Login: React.FC = () => {
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: '',
+      username: '',
       password: '',
     },
   });
@@ -51,7 +51,7 @@ const Login: React.FC = () => {
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
     try {
-      const result = await login(data.email, data.password);
+      const result = await login(data.username, data.password);
       if (result.success) {
         toast({
           title: 'Welcome back!',
@@ -61,7 +61,7 @@ const Login: React.FC = () => {
       } else {
         toast({
           title: 'Sign in failed',
-          description: result.error || 'Invalid email or password',
+          description: result.error || 'Invalid username or password',
           variant: 'destructive',
         });
       }
@@ -96,16 +96,16 @@ const Login: React.FC = () => {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <FormField
                 control={form.control}
-                name="email"
+                name="username"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel>Username</FormLabel>
                     <FormControl>
                       <Input
                         {...field}
-                        type="email"
-                        placeholder="you@example.com"
-                        autoComplete="email"
+                        type="text"
+                        placeholder="Enter your username"
+                        autoComplete="username"
                         disabled={isLoading}
                       />
                     </FormControl>

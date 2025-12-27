@@ -82,84 +82,75 @@ api.interceptors.response.use(
   }
 );
 
-// Auth API
-export const authAPI = {
-  register: (data: { email: string; password: string; full_name?: string }) =>
-    api.post('/api/auth/register/', data),
-  
-  login: (data: { email: string; password: string }) =>
-    api.post('/api/auth/login/', data),
-  
-  logout: () => api.post('/api/auth/logout/'),
-  
-  getMe: () => api.get('/api/auth/me/'),
-};
+// ============= INTERFACES =============
 
-// User API
-export const userAPI = {
-  getProfile: () => api.get('/api/users/me/'),
-  
-  updateProfile: (data: { full_name?: string; avatar?: string }) =>
-    api.patch('/api/users/me/', data),
-};
+// Transaction type - DEBIT (expense) or CREDIT (income)
+export type TransactionType = 'DEBIT' | 'CREDIT';
 
-// Expenses API
+export interface User {
+  id: number;
+  username: string;
+  email: string;
+  full_name?: string;
+  avatar?: string;
+  created_at?: string;
+}
+
 export interface Expense {
   id: number;
-  amount: string | number;
-  category: string;
+  amount: number | string;
+  category: number | null;
   category_name?: string;
   description: string;
   date: string;
-  type: 'income' | 'expense';
+  transaction_type: TransactionType;
+  notes?: string;
   created_at?: string;
   updated_at?: string;
 }
 
 export interface ExpenseInput {
   amount: number;
-  category: number | string;
+  category: number | null;
   description: string;
   date: string;
-  type: 'income' | 'expense';
+  transaction_type: TransactionType;
+  notes?: string;
 }
 
-export const expensesAPI = {
-  getAll: (params?: { page?: number; type?: string; category?: string }) =>
-    api.get('/api/expenses/', { params }),
-  
-  getById: (id: number) => api.get(`/api/expenses/${id}/`),
-  
-  create: (data: ExpenseInput) => api.post('/api/expenses/', data),
-  
-  update: (id: number, data: Partial<ExpenseInput>) =>
-    api.patch(`/api/expenses/${id}/`, data),
-  
-  delete: (id: number) => api.delete(`/api/expenses/${id}/`),
-};
-
-// Categories API
 export interface Category {
   id: number;
   name: string;
   icon?: string;
   color?: string;
+  is_default?: boolean;
 }
 
-export const categoriesAPI = {
-  getAll: () => api.get('/api/categories/'),
-  
-  create: (data: { name: string; icon?: string; color?: string }) =>
-    api.post('/api/categories/', data),
-};
+export interface CategoryRule {
+  id: number;
+  description_keyword: string;
+  category: number;
+  category_name?: string;
+  created_at: string;
+}
 
-// Analytics API
+export interface Budget {
+  id: number;
+  category: number;
+  category_name?: string;
+  amount: number;
+  month: string;
+  spent?: number;
+  remaining?: number;
+  is_over_budget?: boolean;
+}
+
 export interface AnalyticsSummary {
+  period: { start: string; end: string };
   total_income: number;
   total_expenses: number;
   net_balance: number;
-  expense_count: number;
-  income_count: number;
+  transaction_count: number;
 }
 
 export interface MonthlyData {
@@ -168,29 +159,84 @@ export interface MonthlyData {
   expenses: number;
 }
 
-export interface CategoryData {
+export interface CategoryAnalytics {
   category: string;
+  category_id?: number;
   amount: number;
   percentage: number;
   color?: string;
 }
 
-export const analyticsAPI = {
-  getSummary: () => api.get<AnalyticsSummary>('/api/analytics/summary/'),
+export interface UploadPreview {
+  transactions: Expense[];
+  total_count: number;
+  categorized_count: number;
+}
+
+// ============= AUTH API =============
+
+export interface RegisterData {
+  username: string;
+  email: string;
+  password: string;
+  password2: string;
+}
+
+export interface LoginData {
+  username: string;
+  password: string;
+}
+
+export const authAPI = {
+  register: (data: RegisterData) =>
+    api.post('/api/auth/register/', data),
   
-  getMonthly: (params?: { year?: number }) =>
-    api.get<MonthlyData[]>('/api/analytics/monthly/', { params }),
+  login: (data: LoginData) =>
+    api.post('/api/auth/login/', data),
   
-  getByCategories: () => api.get<CategoryData[]>('/api/analytics/categories/'),
+  logout: () => api.post('/api/auth/logout/'),
+  
+  getMe: () => api.get<User>('/api/auth/me/'),
 };
 
-// Statements API
-export const statementsAPI = {
+// ============= USER API =============
+
+export const userAPI = {
+  getProfile: () => api.get<User>('/api/users/me/'),
+  
+  updateProfile: (data: { full_name?: string; avatar?: string }) =>
+    api.patch('/api/users/me/', data),
+};
+
+// ============= EXPENSES API =============
+
+export interface ExpenseFilters {
+  page?: number;
+  type?: TransactionType;
+  category?: number;
+  start_date?: string;
+  end_date?: string;
+}
+
+export const expensesAPI = {
+  getAll: (params?: ExpenseFilters) =>
+    api.get('/api/expenses/', { params }),
+  
+  getById: (id: number) => api.get<Expense>(`/api/expenses/${id}/`),
+  
+  create: (data: ExpenseInput) => api.post<Expense>('/api/expenses/', data),
+  
+  update: (id: number, data: Partial<ExpenseInput>) =>
+    api.patch<Expense>(`/api/expenses/${id}/`, data),
+  
+  delete: (id: number) => api.delete(`/api/expenses/${id}/`),
+
+  // Upload CSV/Excel - returns preview
   upload: (file: File, onProgress?: (progress: number) => void) => {
     const formData = new FormData();
     formData.append('file', file);
     
-    return api.post('/api/statements/upload/', formData, {
+    return api.post<UploadPreview>('/api/expenses/upload/', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -202,6 +248,78 @@ export const statementsAPI = {
       },
     });
   },
+
+  // Bulk create after upload preview
+  bulkCreate: (transactions: ExpenseInput[]) =>
+    api.post('/api/expenses/bulk_create/', { transactions }),
+
+  // Update category with optional rule creation
+  updateCategory: (id: number, data: { category: number; create_rule?: boolean }) =>
+    api.patch<Expense>(`/api/expenses/${id}/update_category/`, data),
+};
+
+// ============= CATEGORIES API =============
+
+export const categoriesAPI = {
+  getAll: () => api.get<Category[]>('/api/categories/'),
+  
+  create: (data: { name: string; icon?: string; color?: string }) =>
+    api.post<Category>('/api/categories/', data),
+
+  update: (id: number, data: { name?: string; icon?: string; color?: string }) =>
+    api.patch<Category>(`/api/categories/${id}/`, data),
+
+  delete: (id: number) => api.delete(`/api/categories/${id}/`),
+};
+
+// ============= CATEGORY RULES API =============
+
+export const categoryRulesAPI = {
+  getAll: () => api.get<CategoryRule[]>('/api/category-rules/'),
+  
+  create: (data: { description_keyword: string; category: number }) =>
+    api.post<CategoryRule>('/api/category-rules/', data),
+
+  update: (id: number, data: { description_keyword?: string; category?: number }) =>
+    api.patch<CategoryRule>(`/api/category-rules/${id}/`, data),
+
+  delete: (id: number) => api.delete(`/api/category-rules/${id}/`),
+};
+
+// ============= BUDGETS API =============
+
+export const budgetsAPI = {
+  getAll: () => api.get<Budget[]>('/api/budgets/'),
+  
+  create: (data: { category: number; amount: number; month: string }) =>
+    api.post<Budget>('/api/budgets/', data),
+
+  update: (id: number, data: { category?: number; amount?: number; month?: string }) =>
+    api.patch<Budget>(`/api/budgets/${id}/`, data),
+
+  delete: (id: number) => api.delete(`/api/budgets/${id}/`),
+};
+
+// ============= ANALYTICS API =============
+
+export interface AnalyticsParams {
+  start_date?: string;
+  end_date?: string;
+}
+
+export interface CategoryAnalyticsParams extends AnalyticsParams {
+  type?: TransactionType;
+}
+
+export const analyticsAPI = {
+  getSummary: (params?: AnalyticsParams) => 
+    api.get<AnalyticsSummary>('/api/analytics/summary/', { params }),
+  
+  getByCategory: (params?: CategoryAnalyticsParams) =>
+    api.get<CategoryAnalytics[]>('/api/analytics/by-category/', { params }),
+  
+  getByMonth: (params?: { months?: number }) =>
+    api.get<MonthlyData[]>('/api/analytics/by-month/', { params }),
 };
 
 export default api;
