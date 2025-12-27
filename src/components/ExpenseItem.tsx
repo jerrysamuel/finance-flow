@@ -18,7 +18,8 @@ interface ExpenseItemProps {
 }
 
 const ExpenseItem: React.FC<ExpenseItemProps> = ({ expense, onEdit, onDelete }) => {
-  const isIncome = expense.type === 'income';
+  // CREDIT = income (money coming in), DEBIT = expense (money going out)
+  const isCredit = expense.transaction_type === 'CREDIT';
   const amount = typeof expense.amount === 'string' ? parseFloat(expense.amount) : expense.amount;
 
   const formatCurrency = (value: number) => {
@@ -29,15 +30,14 @@ const ExpenseItem: React.FC<ExpenseItemProps> = ({ expense, onEdit, onDelete }) 
   };
 
   const getCategoryIcon = () => {
-    // Simple icon mapping based on category
     const iconClass = cn(
       "flex h-10 w-10 items-center justify-center rounded-lg",
-      isIncome ? "bg-income/10 text-income" : "bg-expense/10 text-expense"
+      isCredit ? "bg-income/10 text-income" : "bg-expense/10 text-expense"
     );
 
     return (
       <div className={iconClass}>
-        {isIncome ? (
+        {isCredit ? (
           <ArrowUpRight className="h-5 w-5" />
         ) : (
           <ArrowDownRight className="h-5 w-5" />
@@ -52,10 +52,10 @@ const ExpenseItem: React.FC<ExpenseItemProps> = ({ expense, onEdit, onDelete }) 
 
       <div className="flex-1 min-w-0">
         <p className="font-medium text-foreground truncate">
-          {expense.description || expense.category_name || 'Expense'}
+          {expense.description || expense.category_name || 'Transaction'}
         </p>
         <p className="text-sm text-muted-foreground">
-          {expense.category_name || expense.category} • {format(new Date(expense.date), 'MMM d, yyyy')}
+          {expense.category_name || 'Uncategorized'} • {format(new Date(expense.date), 'MMM d, yyyy')}
         </p>
       </div>
 
@@ -63,10 +63,10 @@ const ExpenseItem: React.FC<ExpenseItemProps> = ({ expense, onEdit, onDelete }) 
         <span
           className={cn(
             "font-semibold tabular-nums",
-            isIncome ? "text-income" : "text-expense"
+            isCredit ? "text-income" : "text-expense"
           )}
         >
-          {isIncome ? '+' : '-'}{formatCurrency(amount)}
+          {isCredit ? '+' : '-'}{formatCurrency(amount)}
         </span>
 
         {(onEdit || onDelete) && (

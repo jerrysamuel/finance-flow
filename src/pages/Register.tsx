@@ -18,7 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Wallet, Loader2, ArrowRight, CheckCircle2 } from 'lucide-react';
 
 const registerSchema = z.object({
-  fullName: z.string().trim().min(2, 'Name must be at least 2 characters').max(100, 'Name must be less than 100 characters'),
+  username: z.string().trim().min(3, 'Username must be at least 3 characters').max(50, 'Username must be less than 50 characters'),
   email: z.string().trim().email('Please enter a valid email address').max(255, 'Email must be less than 255 characters'),
   password: z
     .string()
@@ -26,10 +26,10 @@ const registerSchema = z.object({
     .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
     .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
     .regex(/[0-9]/, 'Password must contain at least one number'),
-  confirmPassword: z.string(),
-}).refine((data) => data.password === data.confirmPassword, {
+  password2: z.string(),
+}).refine((data) => data.password === data.password2, {
   message: "Passwords don't match",
-  path: ['confirmPassword'],
+  path: ['password2'],
 });
 
 type RegisterFormData = z.infer<typeof registerSchema>;
@@ -57,17 +57,22 @@ const Register: React.FC = () => {
   const form = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
-      fullName: '',
+      username: '',
       email: '',
       password: '',
-      confirmPassword: '',
+      password2: '',
     },
   });
 
   const onSubmit = async (data: RegisterFormData) => {
     setIsLoading(true);
     try {
-      const result = await register(data.email, data.password, data.fullName);
+      const result = await register({
+        username: data.username,
+        email: data.email,
+        password: data.password,
+        password2: data.password2,
+      });
       if (result.success) {
         toast({
           title: 'Account created!',
@@ -144,15 +149,15 @@ const Register: React.FC = () => {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
               <FormField
                 control={form.control}
-                name="fullName"
+                name="username"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Full Name</FormLabel>
+                    <FormLabel>Username</FormLabel>
                     <FormControl>
                       <Input
                         {...field}
-                        placeholder="John Doe"
-                        autoComplete="name"
+                        placeholder="johndoe"
+                        autoComplete="username"
                         disabled={isLoading}
                       />
                     </FormControl>
@@ -203,7 +208,7 @@ const Register: React.FC = () => {
 
               <FormField
                 control={form.control}
-                name="confirmPassword"
+                name="password2"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Confirm Password</FormLabel>
