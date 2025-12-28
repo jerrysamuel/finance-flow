@@ -12,6 +12,8 @@ import {
   Menu,
   X,
   Wallet,
+  Target,
+  Wand2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -20,6 +22,8 @@ const navigation = [
   { name: 'Expenses', href: '/expenses', icon: Receipt },
   { name: 'Analytics', href: '/analytics', icon: BarChart3 },
   { name: 'Upload', href: '/upload', icon: Upload },
+  { name: 'Budgets', href: '/budgets', icon: Target },
+  { name: 'Rules', href: '/category-rules', icon: Wand2 },
   { name: 'Settings', href: '/settings', icon: Settings },
 ];
 
