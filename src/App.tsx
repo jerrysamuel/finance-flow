@@ -13,6 +13,8 @@ import Dashboard from "./pages/Dashboard";
 import Expenses from "./pages/Expenses";
 import Analytics from "./pages/Analytics";
 import Upload from "./pages/Upload";
+import Budgets from "./pages/Budgets";
+import CategoryRules from "./pages/CategoryRules";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
@@ -58,6 +60,22 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Upload />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/budgets"
+              element={
+                <ProtectedRoute>
+                  <Budgets />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/category-rules"
+              element={
+                <ProtectedRoute>
+                  <CategoryRules />
                 </ProtectedRoute>
               }
             />
