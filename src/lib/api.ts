@@ -150,7 +150,7 @@ export interface AnalyticsSummary {
   total_income: number;
   total_expenses: number;
   net_balance: number;
-  transaction_count: number;
+  total_transactions: number;
 }
 
 export interface MonthlyData {

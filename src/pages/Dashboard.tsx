@@ -121,7 +121,7 @@ const Dashboard: React.FC = () => {
             />
             <StatCard
               title="Transactions"
-              value={summary?.transaction_count || 0}
+              value={summary?.total_transactions || 0}
               subtitle="All time"
               icon={<Receipt className="h-5 w-5" />}
             />
