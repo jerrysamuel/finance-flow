@@ -1,6 +1,6 @@
 import axios, { AxiosError, AxiosInstance, InternalAxiosRequestConfig } from 'axios';
 
-const API_BASE_URL = 'https://trackr-backend-latest-2.onrender.com';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://trackr-backend-latest-2.onrender.com';
 
 // Token management
 const TOKEN_KEY = 'trackr_access_token';
